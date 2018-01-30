@@ -46,6 +46,28 @@ FOUNDATION_EXPORT const unsigned char saasquatchVersionString[];
             completionHandler:(void (^)(id userInfo,
                                         NSError *error))completionHandler;
 
+/**
+ User Upsert
+ 
+ Updates/creates a user and an account with Referral SaaSquatch.
+ 
+ - parameter tenant:            Identifies which tenant to connect to.
+ - parameter userID:            ID to uniquely track users and let us handle accounts that are shared between users.
+ - parameter accountID:         ID to link a group of users together.
+ - parameter token:             The JWT to sign the request.
+ - parameter userInfo:          A Foundation object from which to generate JSON for the request.
+ - parameter completionHandler: A block object to be executed when the task finishes. This block has no return value.
+ 
+ - Seealso: https://docs.referralsaasquatch.com/api/methods
+ */
++ (void)userUpsertForTenant:(NSString *)tenant
+                   withUserID:(NSString *)userID
+                withAccountID:(NSString *)accountID
+                    withToken:(NSString *)token
+                 withUserInfo:(id)userInfo
+            completionHandler:(void (^)(id userInfo,
+                                        NSError *error))completionHandler;
+
 /*!
  *  Gets a user's information from Referral Saasquatch.
  *

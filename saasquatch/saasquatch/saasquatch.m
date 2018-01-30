@@ -86,6 +86,71 @@ static NSURLSession *session;
     [task resume];
 }
 
++ (void)userUpsertForTenant:(NSString *)tenant
+                 withUserID:(NSString *)userID
+              withAccountID:(NSString *)accountID
+                  withToken:(NSString *)token
+               withUserInfo:(id)userInfo
+          completionHandler:(void (^)(id userInfo,
+                                      NSError *error))completionHandler {
+    NSURL *url = [baseURL URLByAppendingPathComponent:[NSString stringWithFormat:@"/%@/open/account/%@/user/%@", tenant, accountID, userID]];
+    NSMutableURLRequest *request = [NSMutableURLRequest requestWithURL:url];
+    [request setValue:@"application/json" forHTTPHeaderField:@"Content-Type"];
+    [request setValue:token forHTTPHeaderField:@"X-SaaSquatch-User-Token"];
+    request.HTTPMethod = @"PUT";
+    
+    NSData *data;
+    NSError *error;
+    data = [NSJSONSerialization dataWithJSONObject:userInfo options:0 error:&error];
+    if (error) {
+        completionHandler(nil, error);
+        return;
+    }
+    
+    request.HTTPBody = data;
+    
+    NSURLSessionDataTask *task = [session dataTaskWithRequest:request completionHandler:^(NSData *data, NSURLResponse *response, NSError *error){
+        
+        if (error){
+            completionHandler(nil, error);
+            return;
+        }
+        
+        NSHTTPURLResponse *httpResponse = (NSHTTPURLResponse *)response;
+        
+        NSStringEncoding encoding = NSUTF8StringEncoding;
+        NSString *textEncodingName = response.textEncodingName;
+        CFStringRef cfTestEncodingName = (__bridge CFStringRef) textEncodingName;
+        if (textEncodingName) {
+            CFStringEncoding cfStringEncoding = CFStringConvertIANACharSetNameToEncoding(cfTestEncodingName);
+            encoding = CFStringConvertEncodingToNSStringEncoding(cfStringEncoding);
+        }
+        
+        if ([httpResponse statusCode] == 200) {
+            id userInfo;
+            NSError *error;
+            
+            userInfo = [NSJSONSerialization JSONObjectWithData:data options:NSJSONReadingMutableContainers error:&error];
+            if (error) {
+                completionHandler(nil, error);
+                return;
+            }
+            
+            completionHandler(userInfo, nil);
+            
+        } else {
+            NSString *errorString = [[NSString alloc] initWithData:data encoding:encoding];
+            NSDictionary *userInfo = @{ NSLocalizedDescriptionKey : errorString };
+            NSError *error = [NSError errorWithDomain:@"HTTP error" code:[httpResponse statusCode] userInfo:userInfo];
+            completionHandler(nil, error);
+            return;
+        }
+        
+    }];
+    
+    [task resume];
+}
+
 + (void)createCookieUser:(NSString *)tenant
                     withToken:(NSString *)token
                  withUserInfo:(id)userInfo
